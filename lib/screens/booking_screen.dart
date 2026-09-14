@@ -78,8 +78,12 @@ class _BookingScreenState extends State<BookingScreen> {
   }
 
   int get _numberOfNights {
-    if (_checkInDate != null && _checkOutDate != null && _errorMessage == null) {
-      return _stripTime(_checkOutDate!).difference(_stripTime(_checkInDate!)).inDays;
+    if (_checkInDate != null &&
+        _checkOutDate != null &&
+        _errorMessage == null) {
+      return _stripTime(
+        _checkOutDate!,
+      ).difference(_stripTime(_checkInDate!)).inDays;
     }
     return 0;
   }
@@ -139,19 +143,19 @@ class _BookingScreenState extends State<BookingScreen> {
                             children: [
                               Text(
                                 'Select Your Room',
-                                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                style: Theme.of(context).textTheme.titleLarge
+                                    ?.copyWith(fontWeight: FontWeight.bold),
                               ),
                               const SizedBox(height: 12),
                               Expanded(
                                 child: GridView.builder(
-                                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 2,
-                                    childAspectRatio: 1.6,
-                                    crossAxisSpacing: 12,
-                                    mainAxisSpacing: 12,
-                                  ),
+                                  gridDelegate:
+                                      const SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: 2,
+                                        childAspectRatio: 1.6,
+                                        crossAxisSpacing: 12,
+                                        mainAxisSpacing: 12,
+                                      ),
                                   itemCount: mockRooms.length,
                                   itemBuilder: (context, index) {
                                     return _buildRoomCard(mockRooms[index]);
@@ -172,9 +176,8 @@ class _BookingScreenState extends State<BookingScreen> {
                               children: [
                                 Text(
                                   'Reservation Details',
-                                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                  style: Theme.of(context).textTheme.titleLarge
+                                      ?.copyWith(fontWeight: FontWeight.bold),
                                 ),
                                 const SizedBox(height: 16),
                                 _buildDatePickers(),
@@ -201,9 +204,8 @@ class _BookingScreenState extends State<BookingScreen> {
                       const SizedBox(height: 12),
                       Text(
                         'Available Rooms',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 8),
                       Expanded(
@@ -330,7 +332,9 @@ class _BookingScreenState extends State<BookingScreen> {
             width: isSelected ? 2 : 1,
           ),
         ),
-        color: isSelected ? theme.colorScheme.primaryContainer.withAlpha(50) : null,
+        color: isSelected
+            ? theme.colorScheme.primaryContainer.withAlpha(50)
+            : null,
         child: Padding(
           padding: const EdgeInsets.all(12.0),
           child: Column(
@@ -349,7 +353,9 @@ class _BookingScreenState extends State<BookingScreen> {
                     ),
                   ),
                   Icon(
-                    isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
+                    isSelected
+                        ? Icons.check_circle
+                        : Icons.radio_button_unchecked,
                     color: isSelected ? theme.primaryColor : Colors.grey,
                     size: 20,
                   ),
@@ -365,7 +371,11 @@ class _BookingScreenState extends State<BookingScreen> {
               ),
               Row(
                 children: [
-                  const Icon(Icons.person_outline, size: 16, color: Colors.grey),
+                  const Icon(
+                    Icons.person_outline,
+                    size: 16,
+                    color: Colors.grey,
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     'Max Guests: ${room.maxGuests}',
@@ -395,12 +405,12 @@ class _BookingScreenState extends State<BookingScreen> {
 
     return Card(
       elevation: 3,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       color: error != null
           ? Colors.red.shade50
-          : (_isBookingValid ? theme.colorScheme.primaryContainer : Colors.grey.shade100),
+          : (_isBookingValid
+                ? theme.colorScheme.primaryContainer
+                : Colors.grey.shade100),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -414,8 +424,8 @@ class _BookingScreenState extends State<BookingScreen> {
                   color: error != null
                       ? Colors.red
                       : (_isBookingValid
-                          ? theme.colorScheme.onPrimaryContainer
-                          : Colors.grey.shade700),
+                            ? theme.colorScheme.onPrimaryContainer
+                            : Colors.grey.shade700),
                   size: 20,
                 ),
                 const SizedBox(width: 8),
@@ -427,8 +437,8 @@ class _BookingScreenState extends State<BookingScreen> {
                     color: error != null
                         ? Colors.red
                         : (_isBookingValid
-                            ? theme.colorScheme.onPrimaryContainer
-                            : Colors.grey.shade800),
+                              ? theme.colorScheme.onPrimaryContainer
+                              : Colors.grey.shade800),
                   ),
                 ),
               ],
