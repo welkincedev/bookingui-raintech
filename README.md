@@ -29,53 +29,36 @@ A responsive single-page Flutter application built for web, mobile (iOS/Android)
 
 ---
 
-## 📋 How to Run
+## 📋 Prerequisites & How to Run
 
 ### Prerequisites
 - [Flutter SDK](https://docs.flutter.dev/get-started/install) (v3.0.0 or higher)
+- Target device / emulator (Chrome, Android Emulator, iOS Simulator, or Desktop)
 
-### Run on Mobile / Web / Desktop
+### Running the App
 
 ```bash
-# 1. Install dependencies
+# 1. Clone or navigate into project directory
+cd hotel_booking
+
+# 2. Install dependencies
 flutter pub get
 
-# 2. Run on Web (Chrome)
-flutter run -d chrome
-
-# 3. Run on Mobile / Desktop
+# 3. Run application
 flutter run
 ```
 
 ---
 
-## 🔀 Git Branching & Commit Workflow
+## 💡 Future Improvements & Enhancements
 
-This project adheres to a clean, feature-branch Git workflow:
+Given more development time, the following enhancements could be implemented:
 
-```bash
-# 1. Clone repository
-git clone https://github.com/your-username/hotel_booking.git
-cd hotel_booking
-
-# 2. Create and checkout a new feature branch
-git checkout -b feature/responsive-ui
-
-# 3. Make changes and check status
-git status
-
-# 4. Stage and commit changes using conventional commits
-git add .
-git commit -m "feat: add responsive layout builder for web and mobile devices"
-
-# 5. Push branch to remote
-git push -u origin feature/responsive-ui
-
-# 6. Merge back into main branch
-git checkout main
-git merge feature/responsive-ui
-git push origin main
-```
+1. **State Management Architecture**: Refactor from inline `setState` to a structured solution like **Riverpod**, **Bloc**, or **Provider** for clean separation of concerns.
+2. **Backend & Database Integration**: Connect to a REST API or Firebase backend for real-time room availability, live inventory, and actual booking creation.
+3. **Automated Testing**: Add comprehensive unit tests for calculation/validation logic and widget tests for key user flows.
+4. **UI & UX Animations**: Add smooth card selection animations, hero transitions, and responsive grid layouts for tablet/desktop screens.
+5. **Localization & Currency Conversion**: Add support for multiple currencies, date formatting standardizations, and localized strings.
 
 ---
 
@@ -86,4 +69,3 @@ git push origin main
 3. `feat: implement reactive state management for dates and room selection with price calculation logic`
 4. `feat: add date validation constraints and red error state UI indicators`
 5. `docs: add professional README with setup instructions and future enhancements`
-6. `feat: introduce responsive LayoutBuilder for Web and Mobile with GitHub Actions CI workflow`
