@@ -31,7 +31,6 @@ class _BookingScreenState extends State<BookingScreen> {
     if (picked != null) {
       setState(() {
         _checkInDate = picked;
-        // Reset check-out if it's no longer after check-in
         if (_checkOutDate != null &&
             !_stripTime(_checkOutDate!).isAfter(_stripTime(picked))) {
           _checkOutDate = null;
@@ -105,181 +104,380 @@ class _BookingScreenState extends State<BookingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final error = _errorMessage;
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Hotel Room Booking'),
-        centerTitle: true,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+        title: const Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // Top: Date Pickers Side-by-Side
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => _selectCheckInDate(context),
-                    icon: const Icon(Icons.calendar_today),
-                    label: Text(
-                      _checkInDate == null
-                          ? 'Check-in Date'
-                          : _formatDate(_checkInDate!),
+            Icon(Icons.hotel),
+            SizedBox(width: 8),
+            Text('Grand Horizon Hotel Booking'),
+          ],
+        ),
+        centerTitle: true,
+        elevation: 2,
+      ),
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1100),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final isWideScreen = constraints.maxWidth >= 768;
+
+                if (isWideScreen) {
+                  return Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Left Pane: Room Catalog Grid
+                        Expanded(
+                          flex: 3,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Select Your Room',
+                                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                              ),
+                              const SizedBox(height: 12),
+                              Expanded(
+                                child: GridView.builder(
+                                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 2,
+                                    childAspectRatio: 1.6,
+                                    crossAxisSpacing: 12,
+                                    mainAxisSpacing: 12,
+                                  ),
+                                  itemCount: mockRooms.length,
+                                  itemBuilder: (context, index) {
+                                    return _buildRoomCard(mockRooms[index]);
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 24),
+
+                        // Right Pane: Date Selection & Summary
+                        Expanded(
+                          flex: 2,
+                          child: SingleChildScrollView(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Text(
+                                  'Reservation Details',
+                                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                ),
+                                const SizedBox(height: 16),
+                                _buildDatePickers(),
+                                _buildErrorBanner(),
+                                const SizedBox(height: 16),
+                                _buildSummaryCard(),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
+                  );
+                }
+
+                // Mobile / Compact Layout
+                return Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildDatePickers(),
+                      _buildErrorBanner(),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Available Rooms',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                      const SizedBox(height: 8),
+                      Expanded(
+                        child: ListView.builder(
+                          itemCount: mockRooms.length,
+                          itemBuilder: (context, index) {
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 8.0),
+                              child: _buildRoomCard(mockRooms[index]),
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      _buildSummaryCard(),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDatePickers() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => _selectCheckOutDate(context),
-                    icon: const Icon(Icons.calendar_today_outlined),
-                    label: Text(
-                      _checkOutDate == null
-                          ? 'Check-out Date'
-                          : _formatDate(_checkOutDate!),
+                onPressed: () => _selectCheckInDate(context),
+                icon: const Icon(Icons.calendar_today, size: 18),
+                label: Text(
+                  _checkInDate == null
+                      ? 'Check-in Date'
+                      : _formatDate(_checkInDate!),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                onPressed: () => _selectCheckOutDate(context),
+                icon: const Icon(Icons.calendar_today_outlined, size: 18),
+                label: Text(
+                  _checkOutDate == null
+                      ? 'Check-out Date'
+                      : _formatDate(_checkOutDate!),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildErrorBanner() {
+    final error = _errorMessage;
+    if (error == null) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 12.0),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.red.shade50,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.red.shade300),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.error_outline, color: Colors.red, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                error,
+                style: const TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRoomCard(Room room) {
+    final isSelected = _selectedRoom?.roomCode == room.roomCode;
+    final theme = Theme.of(context);
+
+    return InkWell(
+      onTap: () {
+        setState(() {
+          _selectedRoom = room;
+        });
+      },
+      borderRadius: BorderRadius.circular(10),
+      child: Card(
+        elevation: isSelected ? 4 : 1,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+          side: BorderSide(
+            color: isSelected ? theme.primaryColor : Colors.grey.shade300,
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        color: isSelected ? theme.colorScheme.primaryContainer.withAlpha(50) : null,
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    room.roomCode,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: isSelected ? theme.primaryColor : Colors.black87,
                     ),
+                  ),
+                  Icon(
+                    isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
+                    color: isSelected ? theme.primaryColor : Colors.grey,
+                    size: 20,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                room.roomType,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Row(
+                children: [
+                  const Icon(Icons.person_outline, size: 16, color: Colors.grey),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Max Guests: ${room.maxGuests}',
+                    style: TextStyle(color: Colors.grey.shade700, fontSize: 12),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Text(
+                '₹${room.pricePerNight.toInt()} / night',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: theme.primaryColor,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSummaryCard() {
+    final error = _errorMessage;
+    final theme = Theme.of(context);
+
+    return Card(
+      elevation: 3,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      color: error != null
+          ? Colors.red.shade50
+          : (_isBookingValid ? theme.colorScheme.primaryContainer : Colors.grey.shade100),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  _isBookingValid ? Icons.receipt_long : Icons.info_outline,
+                  color: error != null
+                      ? Colors.red
+                      : (_isBookingValid
+                          ? theme.colorScheme.onPrimaryContainer
+                          : Colors.grey.shade700),
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Booking Summary',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    color: error != null
+                        ? Colors.red
+                        : (_isBookingValid
+                            ? theme.colorScheme.onPrimaryContainer
+                            : Colors.grey.shade800),
                   ),
                 ),
               ],
             ),
-
-            // Red Error Banner (Validation Feedback)
-            if (error != null) ...[
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.red.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.red.shade300),
+            const Divider(height: 20),
+            if (error != null)
+              Text(
+                error,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: Colors.red,
                 ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.error_outline, color: Colors.red),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        error,
-                        style: const TextStyle(
-                          color: Colors.red,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+              )
+            else if (_isBookingValid)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Room: ${_selectedRoom!.roomCode} (${_selectedRoom!.roomType})',
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Duration: $_numberOfNights night(s)',
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Booking for $_numberOfNights nights. Total: ₹${_totalPrice.toInt()}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: theme.colorScheme.onPrimaryContainer,
                     ),
-                  ],
-                ),
-              ),
-            ],
-
-            const SizedBox(height: 16),
-
-            // Middle: Room List with Selection Visual State
-            Expanded(
-              child: ListView.builder(
-                itemCount: mockRooms.length,
-                itemBuilder: (context, index) {
-                  final room = mockRooms[index];
-                  final isSelected = _selectedRoom?.roomCode == room.roomCode;
-
-                  return Card(
-                    elevation: isSelected ? 4 : 1,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      side: BorderSide(
-                        color: isSelected
-                            ? Theme.of(context).primaryColor
-                            : Colors.transparent,
-                        width: 2,
-                      ),
-                    ),
-                    color: isSelected
-                        ? Theme.of(context).primaryColor.withAlpha(20)
-                        : null,
-                    margin: const EdgeInsets.symmetric(vertical: 6),
-                    child: ListTile(
-                      title: Text(
-                        '${room.roomCode} - ${room.roomType}',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      subtitle: Text('Max Guests: ${room.maxGuests}'),
-                      trailing: Text(
-                        '₹${room.pricePerNight.toInt()} / night',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).primaryColor,
-                        ),
-                      ),
-                      onTap: () {
-                        setState(() {
-                          _selectedRoom = room;
-                        });
-                      },
-                    ),
-                  );
-                },
-              ),
-            ),
-
-            // Bottom: Dynamic Summary & Validation Feedback Card
-            Card(
-              elevation: 3,
-              color: error != null
-                  ? Colors.red.shade50
-                  : (_isBookingValid
-                      ? Theme.of(context).colorScheme.primaryContainer
-                      : Colors.grey.shade100),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text(
-                      'Booking Summary',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                        color: Colors.grey,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    if (error != null)
-                      Text(
-                        error,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                          color: Colors.red,
-                        ),
-                      )
-                    else if (_isBookingValid)
-                      Text(
-                        'Booking for $_numberOfNights nights. Total: ₹${_totalPrice.toInt()}',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: Theme.of(context).colorScheme.onPrimaryContainer,
-                        ),
-                      )
-                    else
-                      Text(
-                        _selectedRoom == null
-                            ? 'Please select a room to proceed.'
-                            : 'Select valid check-in & check-out dates.',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                          color: Colors.grey.shade700,
-                        ),
-                      ),
-                  ],
+                  ),
+                ],
+              )
+            else
+              Text(
+                _selectedRoom == null
+                    ? 'Please select a room to calculate total.'
+                    : 'Select valid check-in & check-out dates.',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: Colors.grey.shade700,
                 ),
               ),
-            ),
           ],
         ),
       ),
