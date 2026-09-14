@@ -14,31 +14,43 @@ class _BookingScreenState extends State<BookingScreen> {
   DateTime? _checkOutDate;
   Room? _selectedRoom;
 
+  DateTime get _today => _stripTime(DateTime.now());
+
+  DateTime _stripTime(DateTime dt) {
+    return DateTime(dt.year, dt.month, dt.day);
+  }
+
   Future<void> _selectCheckInDate(BuildContext context) async {
-    final DateTime initial = _checkInDate ?? DateTime.now();
+    final DateTime initial = _checkInDate ?? _today;
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: initial,
-      firstDate: DateTime.now().subtract(const Duration(days: 365)),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      initialDate: initial.isBefore(_today) ? _today : initial,
+      firstDate: _today,
+      lastDate: _today.add(const Duration(days: 365)),
     );
     if (picked != null) {
       setState(() {
         _checkInDate = picked;
+        // Reset check-out if it's no longer after check-in
+        if (_checkOutDate != null &&
+            !_stripTime(_checkOutDate!).isAfter(_stripTime(picked))) {
+          _checkOutDate = null;
+        }
       });
     }
   }
 
   Future<void> _selectCheckOutDate(BuildContext context) async {
-    final DateTime initial = _checkOutDate ??
-        (_checkInDate != null
-            ? _checkInDate!.add(const Duration(days: 1))
-            : DateTime.now());
+    final DateTime minCheckOut = _checkInDate != null
+        ? _stripTime(_checkInDate!).add(const Duration(days: 1))
+        : _today.add(const Duration(days: 1));
+
+    final DateTime initial = _checkOutDate ?? minCheckOut;
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: initial,
-      firstDate: DateTime.now().subtract(const Duration(days: 365)),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      initialDate: initial.isBefore(minCheckOut) ? minCheckOut : initial,
+      firstDate: minCheckOut,
+      lastDate: _today.add(const Duration(days: 365)),
     );
     if (picked != null) {
       setState(() {
@@ -47,9 +59,28 @@ class _BookingScreenState extends State<BookingScreen> {
     }
   }
 
-  int get _numberOfNights {
+  String? get _errorMessage {
+    if (_checkInDate != null) {
+      final checkIn = _stripTime(_checkInDate!);
+      if (checkIn.isBefore(_today)) {
+        return 'Check-in date cannot be in the past.';
+      }
+    }
+
     if (_checkInDate != null && _checkOutDate != null) {
-      return _checkOutDate!.difference(_checkInDate!).inDays;
+      final checkIn = _stripTime(_checkInDate!);
+      final checkOut = _stripTime(_checkOutDate!);
+      if (!checkOut.isAfter(checkIn)) {
+        return 'Check-out must be after check-in.';
+      }
+    }
+
+    return null;
+  }
+
+  int get _numberOfNights {
+    if (_checkInDate != null && _checkOutDate != null && _errorMessage == null) {
+      return _stripTime(_checkOutDate!).difference(_stripTime(_checkInDate!)).inDays;
     }
     return 0;
   }
@@ -58,7 +89,7 @@ class _BookingScreenState extends State<BookingScreen> {
     return _checkInDate != null &&
         _checkOutDate != null &&
         _selectedRoom != null &&
-        _checkOutDate!.isAfter(_checkInDate!);
+        _errorMessage == null;
   }
 
   double get _totalPrice {
@@ -74,6 +105,8 @@ class _BookingScreenState extends State<BookingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final error = _errorMessage;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Hotel Room Booking'),
@@ -112,6 +145,35 @@ class _BookingScreenState extends State<BookingScreen> {
                 ),
               ],
             ),
+
+            // Red Error Banner (Validation Feedback)
+            if (error != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.red.shade300),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.error_outline, color: Colors.red),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        error,
+                        style: const TextStyle(
+                          color: Colors.red,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
             const SizedBox(height: 16),
 
             // Middle: Room List with Selection Visual State
@@ -162,12 +224,14 @@ class _BookingScreenState extends State<BookingScreen> {
               ),
             ),
 
-            // Bottom: Dynamic Booking Summary Card
+            // Bottom: Dynamic Summary & Validation Feedback Card
             Card(
               elevation: 3,
-              color: _isBookingValid
-                  ? Theme.of(context).colorScheme.primaryContainer
-                  : Colors.grey.shade100,
+              color: error != null
+                  ? Colors.red.shade50
+                  : (_isBookingValid
+                      ? Theme.of(context).colorScheme.primaryContainer
+                      : Colors.grey.shade100),
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
@@ -183,18 +247,35 @@ class _BookingScreenState extends State<BookingScreen> {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      _isBookingValid
-                          ? 'Booking for $_numberOfNights nights. Total: ₹${_totalPrice.toInt()}'
-                          : 'Select check-in, check-out & room to calculate total.',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: _isBookingValid
-                            ? Theme.of(context).colorScheme.onPrimaryContainer
-                            : Colors.black87,
+                    if (error != null)
+                      Text(
+                        error,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                          color: Colors.red,
+                        ),
+                      )
+                    else if (_isBookingValid)
+                      Text(
+                        'Booking for $_numberOfNights nights. Total: ₹${_totalPrice.toInt()}',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Theme.of(context).colorScheme.onPrimaryContainer,
+                        ),
+                      )
+                    else
+                      Text(
+                        _selectedRoom == null
+                            ? 'Please select a room to proceed.'
+                            : 'Select valid check-in & check-out dates.',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                          color: Colors.grey.shade700,
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),
