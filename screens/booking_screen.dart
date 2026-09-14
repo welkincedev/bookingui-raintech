@@ -14,6 +14,64 @@ class _BookingScreenState extends State<BookingScreen> {
   DateTime? _checkOutDate;
   Room? _selectedRoom;
 
+  Future<void> _selectCheckInDate(BuildContext context) async {
+    final DateTime initial = _checkInDate ?? DateTime.now();
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (picked != null) {
+      setState(() {
+        _checkInDate = picked;
+      });
+    }
+  }
+
+  Future<void> _selectCheckOutDate(BuildContext context) async {
+    final DateTime initial = _checkOutDate ??
+        (_checkInDate != null
+            ? _checkInDate!.add(const Duration(days: 1))
+            : DateTime.now());
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (picked != null) {
+      setState(() {
+        _checkOutDate = picked;
+      });
+    }
+  }
+
+  int get _numberOfNights {
+    if (_checkInDate != null && _checkOutDate != null) {
+      return _checkOutDate!.difference(_checkInDate!).inDays;
+    }
+    return 0;
+  }
+
+  bool get _isBookingValid {
+    return _checkInDate != null &&
+        _checkOutDate != null &&
+        _selectedRoom != null &&
+        _checkOutDate!.isAfter(_checkInDate!);
+  }
+
+  double get _totalPrice {
+    if (_isBookingValid) {
+      return _numberOfNights * _selectedRoom!.pricePerNight;
+    }
+    return 0.0;
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -26,28 +84,29 @@ class _BookingScreenState extends State<BookingScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // Top: Date Pickers Side-by-Side
             Row(
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: () {},
+                    onPressed: () => _selectCheckInDate(context),
                     icon: const Icon(Icons.calendar_today),
                     label: Text(
                       _checkInDate == null
                           ? 'Check-in Date'
-                          : '${_checkInDate!.day}/${_checkInDate!.month}/${_checkInDate!.year}',
+                          : _formatDate(_checkInDate!),
                     ),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: () {},
+                    onPressed: () => _selectCheckOutDate(context),
                     icon: const Icon(Icons.calendar_today_outlined),
                     label: Text(
                       _checkOutDate == null
                           ? 'Check-out Date'
-                          : '${_checkOutDate!.day}/${_checkOutDate!.month}/${_checkOutDate!.year}',
+                          : _formatDate(_checkOutDate!),
                     ),
                   ),
                 ),
@@ -55,6 +114,7 @@ class _BookingScreenState extends State<BookingScreen> {
             ),
             const SizedBox(height: 16),
 
+            // Middle: Room List with Selection Visual State
             Expanded(
               child: ListView.builder(
                 itemCount: mockRooms.length,
@@ -102,20 +162,38 @@ class _BookingScreenState extends State<BookingScreen> {
               ),
             ),
 
+            // Bottom: Dynamic Booking Summary Card
             Card(
-              elevation: 2,
+              elevation: 3,
+              color: _isBookingValid
+                  ? Theme.of(context).colorScheme.primaryContainer
+                  : Colors.grey.shade100,
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     const Text(
-                      'Booking Summary:',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                      'Booking Summary',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: Colors.grey,
+                      ),
                     ),
+                    const SizedBox(height: 4),
                     Text(
-                      'Select dates & room',
-                      style: TextStyle(color: Colors.grey.shade600),
+                      _isBookingValid
+                          ? 'Booking for $_numberOfNights nights. Total: ₹${_totalPrice.toInt()}'
+                          : 'Select check-in, check-out & room to calculate total.',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: _isBookingValid
+                            ? Theme.of(context).colorScheme.onPrimaryContainer
+                            : Colors.black87,
+                      ),
                     ),
                   ],
                 ),
